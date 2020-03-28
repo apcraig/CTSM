@@ -110,8 +110,10 @@ contains
 
        wateratm2lndbulk_inst%forc_flood_grc(g)   = -x2l(index_x2l_Flrr_flood,i)  
 
-       wateratm2lndbulk_inst%volr_grc(g)   = x2l(index_x2l_Flrr_volr,i) * (ldomain%area(g) * 1.e6_r8)
-       wateratm2lndbulk_inst%volrmch_grc(g)= x2l(index_x2l_Flrr_volrmch,i) * (ldomain%area(g) * 1.e6_r8)
+!tcx       wateratm2lndbulk_inst%volr_grc(g)   = x2l(index_x2l_Flrr_volr,i) * (ldomain%area(g) * 1.e6_r8)
+!tcx       wateratm2lndbulk_inst%volrmch_grc(g)= x2l(index_x2l_Flrr_volrmch,i) * (ldomain%area(g) * 1.e6_r8)
+       wateratm2lndbulk_inst%volr_grc(g)   = 0._r8
+       wateratm2lndbulk_inst%volrmch_grc(g)= 0._r8
 
        ! Determine required receive fields
 
@@ -266,19 +268,19 @@ contains
 
     end do
 
-    call glc2lnd_inst%set_glc2lnd_fields_mct( &
-         bounds = bounds, &
-         glc_present = glc_present, &
-         ! NOTE(wjs, 2017-12-13) the x2l argument doesn't have the typical bounds
-         ! subsetting (bounds%begg:bounds%endg). This mirrors the lack of these bounds in
-         ! the call to lnd_import from lnd_run_mct. This is okay as long as this code is
-         ! outside a clump loop.
-         x2l = x2l, &
-         index_x2l_Sg_ice_covered = index_x2l_Sg_ice_covered, &
-         index_x2l_Sg_topo = index_x2l_Sg_topo, &
-         index_x2l_Flgg_hflx = index_x2l_Flgg_hflx, &
-         index_x2l_Sg_icemask = index_x2l_Sg_icemask, &
-         index_x2l_Sg_icemask_coupled_fluxes = index_x2l_Sg_icemask_coupled_fluxes)
+!tcx    call glc2lnd_inst%set_glc2lnd_fields_mct( &
+!         bounds = bounds, &
+!         glc_present = glc_present, &
+!         ! NOTE(wjs, 2017-12-13) the x2l argument doesn't have the typical bounds
+!         ! subsetting (bounds%begg:bounds%endg). This mirrors the lack of these bounds in
+!         ! the call to lnd_import from lnd_run_mct. This is okay as long as this code is
+!         ! outside a clump loop.
+!         x2l = x2l, &
+!         index_x2l_Sg_ice_covered = index_x2l_Sg_ice_covered, &
+!         index_x2l_Sg_topo = index_x2l_Sg_topo, &
+!         index_x2l_Flgg_hflx = index_x2l_Flgg_hflx, &
+!         index_x2l_Sg_icemask = index_x2l_Sg_icemask, &
+!         index_x2l_Sg_icemask_coupled_fluxes = index_x2l_Sg_icemask_coupled_fluxes)
 
   end subroutine lnd_import
 
@@ -384,30 +386,35 @@ contains
        ! sign convention is positive downward with 
        ! hierarchy of atm/glc/lnd/rof/ice/ocn.  
        ! I.e. water sent from land to rof is positive
+!tcx for cesm1
+       l2x(index_l2x_Flrl_rofsur,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsur_grc(g) + &
+                                      waterlnd2atmbulk_inst%qflx_rofliq_qgwl_grc(g) + &
+                                      waterlnd2atmbulk_inst%qflx_rofliq_qsub_grc(g) + &
+                                      waterlnd2atmbulk_inst%qflx_rofliq_drain_perched_grc(g)
 
-       l2x(index_l2x_Flrl_rofsur,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsur_grc(g)
+!       l2x(index_l2x_Flrl_rofsur,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsur_grc(g)
 
        !  subsurface runoff is the sum of qflx_drain and qflx_perched_drain
-       l2x(index_l2x_Flrl_rofsub,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsub_grc(g) &
-            + waterlnd2atmbulk_inst%qflx_rofliq_drain_perched_grc(g)
+!       l2x(index_l2x_Flrl_rofsub,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsub_grc(g) &
+!            + waterlnd2atmbulk_inst%qflx_rofliq_drain_perched_grc(g)
 
        !  qgwl sent individually to coupler
-       l2x(index_l2x_Flrl_rofgwl,i) = waterlnd2atmbulk_inst%qflx_rofliq_qgwl_grc(g)
+!       l2x(index_l2x_Flrl_rofgwl,i) = waterlnd2atmbulk_inst%qflx_rofliq_qgwl_grc(g)
 
        ! ice  sent individually to coupler
        l2x(index_l2x_Flrl_rofi,i) = waterlnd2atmbulk_inst%qflx_rofice_grc(g)
 
        ! irrigation flux to be removed from main channel storage (negative)
-       l2x(index_l2x_Flrl_irrig,i) = - waterlnd2atmbulk_inst%qirrig_grc(g)
+!       l2x(index_l2x_Flrl_irrig,i) = - waterlnd2atmbulk_inst%qirrig_grc(g)
 
        ! glc coupling
        ! We could avoid setting these fields if glc_present is .false., if that would
        ! help with performance. (The downside would be that we wouldn't have these fields
        ! available for diagnostic purposes or to force a later T compset with dlnd.)
        do num = 0,glc_nec
-          l2x(index_l2x_Sl_tsrf(num),i)   = lnd2glc_inst%tsrf_grc(g,num)
-          l2x(index_l2x_Sl_topo(num),i)   = lnd2glc_inst%topo_grc(g,num)
-          l2x(index_l2x_Flgl_qice(num),i) = lnd2glc_inst%qice_grc(g,num)
+!tcx          l2x(index_l2x_Sl_tsrf(num),i)   = lnd2glc_inst%tsrf_grc(g,num)
+!          l2x(index_l2x_Sl_topo(num),i)   = lnd2glc_inst%topo_grc(g,num)
+!          l2x(index_l2x_Flgl_qice(num),i) = lnd2glc_inst%qice_grc(g,num)
        end do
 
        ! Check if any output sent to the coupler is NaN

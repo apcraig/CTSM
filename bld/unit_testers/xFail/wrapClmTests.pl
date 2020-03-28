@@ -100,7 +100,7 @@ else { $cfgdir = $cwd; }
 #-----------------------------------------------------------------------------------------------
 my @dirs = ( $cfgdir,
              "$cfgdir/../",
-             "$cfgdir/../../../../../cime/utils/perl5lib");
+             "$cfgdir/../../../../../../scripts/ccsm_utils/Tools/perl5lib");
 unshift @INC, @dirs;
 my $result = eval "require expectedFail";
 if ( ! defined($result) ) {

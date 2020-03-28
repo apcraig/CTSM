@@ -171,11 +171,13 @@ contains
     ! clm -> drv 
     !-------------------------------------------------------------
 
-    index_l2x_Flrl_rofsur   = mct_avect_indexra(l2x,'Flrl_rofsur')
-    index_l2x_Flrl_rofgwl   = mct_avect_indexra(l2x,'Flrl_rofgwl')
-    index_l2x_Flrl_rofsub   = mct_avect_indexra(l2x,'Flrl_rofsub')
-    index_l2x_Flrl_rofi     = mct_avect_indexra(l2x,'Flrl_rofi')
-    index_l2x_Flrl_irrig    = mct_avect_indexra(l2x,'Flrl_irrig')
+!tcx    index_l2x_Flrl_rofsur   = mct_avect_indexra(l2x,'Flrl_rofsur')
+!    index_l2x_Flrl_rofgwl   = mct_avect_indexra(l2x,'Flrl_rofgwl')
+!    index_l2x_Flrl_rofsub   = mct_avect_indexra(l2x,'Flrl_rofsub')
+!    index_l2x_Flrl_rofi     = mct_avect_indexra(l2x,'Flrl_rofi')
+!    index_l2x_Flrl_irrig    = mct_avect_indexra(l2x,'Flrl_irrig')
+    index_l2x_Flrl_rofsur   = mct_avect_indexra(l2x,'Flrl_rofliq')
+    index_l2x_Flrl_rofi     = mct_avect_indexra(l2x,'Flrl_rofice')
 
     index_l2x_Sl_t          = mct_avect_indexra(l2x,'Sl_t')
     index_l2x_Sl_snowh      = mct_avect_indexra(l2x,'Sl_snowh')
@@ -245,8 +247,8 @@ contains
 
     index_x2l_Sa_methane    = mct_avect_indexra(x2l,'Sa_methane',perrWith='quiet')
 
-    index_x2l_Flrr_volr     = mct_avect_indexra(x2l,'Flrr_volr')
-    index_x2l_Flrr_volrmch  = mct_avect_indexra(x2l,'Flrr_volrmch')
+!tcx    index_x2l_Flrr_volr     = mct_avect_indexra(x2l,'Flrr_volr')
+!tcx    index_x2l_Flrr_volrmch  = mct_avect_indexra(x2l,'Flrr_volrmch')
 
     index_x2l_Faxa_lwdn     = mct_avect_indexra(x2l,'Faxa_lwdn')
     index_x2l_Faxa_rainc    = mct_avect_indexra(x2l,'Faxa_rainc')
@@ -285,12 +287,12 @@ contains
     ! glc coupling
     !-------------------------------------------------------------
 
-    index_x2l_Sg_icemask = mct_avect_indexra(x2l,'Sg_icemask')
-    index_x2l_Sg_icemask_coupled_fluxes = mct_avect_indexra(x2l,'Sg_icemask_coupled_fluxes')
+!tcx    index_x2l_Sg_icemask = mct_avect_indexra(x2l,'Sg_icemask')
+!tcx    index_x2l_Sg_icemask_coupled_fluxes = mct_avect_indexra(x2l,'Sg_icemask_coupled_fluxes')
 
     glc_nec = glc_get_num_elevation_classes()
     if (glc_nec < 1) then
-       call shr_sys_abort('ERROR: In CLM4.5 and later, glc_nec must be at least 1.')
+!tcx       call shr_sys_abort('ERROR: In CLM4.5 and later, glc_nec must be at least 1.')
     end if
 
     ! Create coupling fields for all glc elevation classes (1:glc_nec) plus bare land
@@ -306,18 +308,18 @@ contains
        nec_str = glc_elevclass_as_string(num)
 
        name = 'Sg_ice_covered' // nec_str
-       index_x2l_Sg_ice_covered(num) = mct_avect_indexra(x2l,trim(name))
+!tcx       index_x2l_Sg_ice_covered(num) = mct_avect_indexra(x2l,trim(name))
        name = 'Sg_topo' // nec_str
-       index_x2l_Sg_topo(num)   = mct_avect_indexra(x2l,trim(name))
+!       index_x2l_Sg_topo(num)   = mct_avect_indexra(x2l,trim(name))
        name = 'Flgg_hflx' // nec_str
-       index_x2l_Flgg_hflx(num) = mct_avect_indexra(x2l,trim(name))
+!       index_x2l_Flgg_hflx(num) = mct_avect_indexra(x2l,trim(name))
 
        name = 'Sl_tsrf' // nec_str
-       index_l2x_Sl_tsrf(num)   = mct_avect_indexra(l2x,trim(name))
+!       index_l2x_Sl_tsrf(num)   = mct_avect_indexra(l2x,trim(name))
        name = 'Sl_topo' // nec_str
-       index_l2x_Sl_topo(num)   = mct_avect_indexra(l2x,trim(name))
+!       index_l2x_Sl_topo(num)   = mct_avect_indexra(l2x,trim(name))
        name = 'Flgl_qice' // nec_str
-       index_l2x_Flgl_qice(num) = mct_avect_indexra(l2x,trim(name))
+!       index_l2x_Flgl_qice(num) = mct_avect_indexra(l2x,trim(name))
     end do
 
     call mct_aVect_clean(x2l)
