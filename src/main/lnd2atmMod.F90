@@ -182,6 +182,7 @@ contains
     integer  :: c, g  ! indices
     real(r8) :: qflx_ice_runoff_col(bounds%begc:bounds%endc) ! total column-level ice runoff
     real(r8) :: eflx_sh_ice_to_liq_grc(bounds%begg:bounds%endg) ! sensible heat flux generated from the ice to liquid conversion, averaged to gridcell
+    real(r8) :: logz0m(bounds%begp:bounds%endp) ! sensible heat flux generated from the ice to liquid conversion, averaged to gridcell
     real(r8), parameter :: amC   = 12.0_r8 ! Atomic mass number for Carbon
     real(r8), parameter :: amO   = 16.0_r8 ! Atomic mass number for Oxygen
     real(r8), parameter :: amCO2 = amC + 2.0_r8*amO ! Atomic mass number for CO2
@@ -241,11 +242,6 @@ contains
          p2c_scale_type='unity', c2l_scale_type= 'urbanf', l2g_scale_type='unity')
 
     call p2g(bounds, &
-         frictionvel_inst%z0m_actual_patch (bounds%begp:bounds%endp), &
-         lnd2atm_inst%z0m_grc              (bounds%begg:bounds%endg), &
-         p2c_scale_type='unity', c2l_scale_type= 'urbans', l2g_scale_type='unity')
-
-    call p2g(bounds, &
          frictionvel_inst%fv_patch (bounds%begp:bounds%endp), &
          lnd2atm_inst%fv_grc       (bounds%begg:bounds%endg), &
          p2c_scale_type='unity', c2l_scale_type= 'unity', l2g_scale_type='unity')
@@ -253,6 +249,16 @@ contains
     call p2g(bounds, &
          frictionvel_inst%ram1_patch (bounds%begp:bounds%endp), &
          lnd2atm_inst%ram1_grc       (bounds%begg:bounds%endg), &
+         p2c_scale_type='unity', c2l_scale_type= 'unity', l2g_scale_type='unity')
+
+    ! tcraig, momentum roughness length coupling for WRF
+    ! aggregate the log(z0m_actual_patch) for science reasons
+    ! the coupling field is the log(z0m) so just carry the log weighted average thru
+    ! to the coupler
+    logz0m(bounds%begp:bounds%endp) = log(frictionvel_inst%z0m_actual_patch(bounds%begp:bounds%endp))
+    call p2g(bounds, &
+         logz0m, &
+         lnd2atm_inst%logz0m_grc   (bounds%begg:bounds%endg), &
          p2c_scale_type='unity', c2l_scale_type= 'unity', l2g_scale_type='unity')
 
     call p2g( bounds, &

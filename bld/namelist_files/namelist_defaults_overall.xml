@@ -75,6 +75,7 @@ determine default values for namelists.
 
 <mask hgrid="us20"                >us20</mask>
 <mask hgrid="wus12"               >wus12</mask>
+<mask hgrid="wr50a"               >wr50a</mask>
 
 <mask hgrid="5x5_amazon"          >navy</mask>
 <mask hgrid="1x1_tropicAtl"       >test</mask>

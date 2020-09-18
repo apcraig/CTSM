@@ -215,8 +215,9 @@ contains
        end if
        if ( (atm2lnd_inst%forc_solad_grc(g,1) < 0.0_r8) .or.  (atm2lnd_inst%forc_solad_grc(g,2) < 0.0_r8) &
        .or. (atm2lnd_inst%forc_solai_grc(g,1) < 0.0_r8) .or.  (atm2lnd_inst%forc_solai_grc(g,2) < 0.0_r8) ) then
-          call endrun( sub//' ERROR: One of the solar fields (indirect/diffuse, vis or near-IR)'// &
-                       ' from the atmosphere model is negative or zero' )
+!tcx temporary
+!          call endrun( sub//' ERROR: One of the solar fields (indirect/diffuse, vis or near-IR)'// &
+!                       ' from the atmosphere model is negative or zero' )
        end if
        if ( wateratm2lndbulk_inst%forc_q_not_downscaled_grc(g) < 0.0_r8 )then
           call endrun( sub//' ERROR: Bottom layer specific humidty sent from the atmosphere model is less than zero' )
@@ -351,6 +352,7 @@ contains
        ! Additional fields for DUST, PROGSSLT, dry-deposition and VOC
        ! These are now standard fields, but the check on the index makes sure the driver handles them
        if (index_l2x_Sl_ram1      /= 0 )  l2x(index_l2x_Sl_ram1,i)     =  lnd2atm_inst%ram1_grc(g)
+       if (index_l2x_Sl_logz0     /= 0 )  l2x(index_l2x_Sl_logz0,i)    =  lnd2atm_inst%logz0m_grc(g)
        if (index_l2x_Sl_fv        /= 0 )  l2x(index_l2x_Sl_fv,i)       =  lnd2atm_inst%fv_grc(g)
        if (index_l2x_Sl_soilw     /= 0 )  l2x(index_l2x_Sl_soilw,i)    =  waterlnd2atmbulk_inst%h2osoi_vol_grc(g,1)
        if (index_l2x_Fall_flxdst1 /= 0 )  l2x(index_l2x_Fall_flxdst1,i)= -lnd2atm_inst%flxdst_grc(g,1)
