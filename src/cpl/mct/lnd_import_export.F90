@@ -56,6 +56,7 @@ contains
     real(r8) :: co2_ppmv_prog        ! temporary
     real(r8) :: co2_ppmv_val         ! temporary
     real(r8) :: prec_limit           ! check for tiny negative values of precip
+    real(r8) :: sola_limit           ! check for tiny negative values of solar
     integer  :: co2_type_idx         ! integer flag for co2_type options
     real(r8) :: esatw                ! saturation vapor pressure over water (Pa)
     real(r8) :: esati                ! saturation vapor pressure over ice (Pa)
@@ -125,6 +126,15 @@ contains
        atm2lnd_inst%forc_solai_grc(g,2)              = x2l(index_x2l_Faxa_swndf,i)   ! forc_solldxy Atm flux  W/m^2
        atm2lnd_inst%forc_solai_grc(g,1)              = x2l(index_x2l_Faxa_swvdf,i)   ! forc_solsdxy Atm flux  W/m^2
 
+       ! tcx, check for tiny negative downward solar values and reset.
+       ! only set to zero if they are very small negative values, otherwise let the code fail
+       ! typical max values of solar forcing are 500, set sola_limit to several orders of magnitude smaller
+       sola_limit = -1.0e-16
+       if (atm2lnd_inst%forc_solad_grc(g,1) < 0._r8 .and. atm2lnd_inst%forc_solad_grc(g,1) > sola_limit) atm2lnd_inst%forc_solad_grc(g,1) = 0._r8
+       if (atm2lnd_inst%forc_solad_grc(g,2) < 0._r8 .and. atm2lnd_inst%forc_solad_grc(g,2) > sola_limit) atm2lnd_inst%forc_solad_grc(g,2) = 0._r8
+       if (atm2lnd_inst%forc_solai_grc(g,1) < 0._r8 .and. atm2lnd_inst%forc_solai_grc(g,1) > sola_limit) atm2lnd_inst%forc_solai_grc(g,1) = 0._r8
+       if (atm2lnd_inst%forc_solai_grc(g,2) < 0._r8 .and. atm2lnd_inst%forc_solai_grc(g,2) > sola_limit) atm2lnd_inst%forc_solai_grc(g,2) = 0._r8
+
        atm2lnd_inst%forc_th_not_downscaled_grc(g)    = x2l(index_x2l_Sa_ptem,i)      ! forc_thxy Atm state K
        wateratm2lndbulk_inst%forc_q_not_downscaled_grc(g)     = x2l(index_x2l_Sa_shum,i)      ! forc_qxy  Atm state kg/kg
        atm2lnd_inst%forc_pbot_not_downscaled_grc(g)  = x2l(index_x2l_Sa_pbot,i)      ! ptcmxy  Atm state Pa
@@ -135,7 +145,8 @@ contains
        forc_rainl                                    = x2l(index_x2l_Faxa_rainl,i)   ! mm/s
        forc_snowc                                    = x2l(index_x2l_Faxa_snowc,i)   ! mm/s
        forc_snowl                                    = x2l(index_x2l_Faxa_snowl,i)   ! mm/s
-       ! tcraig, check for negative values as this causing problems in CTSM soil
+
+       ! tcx, check for negative values as this causing problems in CTSM soil
        ! only set to zero if they are very small negative values, otherwise let the code fail
        ! typical max values of precip are 1.0e-4, set prec_limit to several orders of magnitude smaller
        prec_limit = -1.0e-16
@@ -222,9 +233,12 @@ contains
        end if
        if ( (atm2lnd_inst%forc_solad_grc(g,1) < 0.0_r8) .or.  (atm2lnd_inst%forc_solad_grc(g,2) < 0.0_r8) &
        .or. (atm2lnd_inst%forc_solai_grc(g,1) < 0.0_r8) .or.  (atm2lnd_inst%forc_solai_grc(g,2) < 0.0_r8) ) then
-!tcx temporary
-!          call endrun( sub//' ERROR: One of the solar fields (indirect/diffuse, vis or near-IR)'// &
-!                       ' from the atmosphere model is negative or zero' )
+          write(iulog,*) 'ERROR solar fields too negative solad1=',atm2lnd_inst%forc_solad_grc(g,1)
+          write(iulog,*) 'ERROR solar fields too negative solad2=',atm2lnd_inst%forc_solad_grc(g,2)
+          write(iulog,*) 'ERROR solar fields too negative solai1=',atm2lnd_inst%forc_solai_grc(g,1)
+          write(iulog,*) 'ERROR solar fields too negative solai2=',atm2lnd_inst%forc_solai_grc(g,2)
+          call endrun( sub//' ERROR: One of the solar fields (indirect/diffuse, vis or near-IR)'// &
+                       ' from the atmosphere model is negative or zero' )
        end if
        if ( wateratm2lndbulk_inst%forc_q_not_downscaled_grc(g) < 0.0_r8 )then
           call endrun( sub//' ERROR: Bottom layer specific humidty sent from the atmosphere model is less than zero' )
