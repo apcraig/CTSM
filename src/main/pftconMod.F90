@@ -477,7 +477,7 @@ contains
     use ncdio_pio   , only : ncd_inqdid, ncd_inqdlen
     use clm_varctl  , only : paramfile, use_fates, use_flexibleCN, use_dynroot
     use spmdMod     , only : masterproc
-    use CLMFatesParamInterfaceMod, only : FatesReadPFTs
+    use CLMFates_ParamInterfaceMod, only : FatesReadPFTs
     !
     ! !ARGUMENTS:
     class(pftcon_type) :: this

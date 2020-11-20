@@ -3,7 +3,7 @@
 #
 #  This is a script to list the missing files in your CESM inputdata area
 #  for a list of resolutions and model configurations. The list goes
-#  out to the file: clm.input_data_list. The check_input_data script
+#  out to the file: ctsm.input_data_list. The check_input_data script
 #  can then be used to get this list of files from the SVN inputdata
 #  repository.
 #
@@ -17,18 +17,19 @@
 #
 # To then get the files from the CESM SVN repository:
 #
-# ../../cime/scripts/Tools/check_input_data -datalistdir . -export
+# ../../../../scripts/ccsm_utils/Tools/check_input_data -datalistdir . -export
 #
 #=======================================================================
 
+use Cwd;
 use strict;
-use Cwd qw(getcwd abs_path);
+#use diagnostics;
 use Getopt::Long;
 use English;
-#use diagnostics;
 
 #-----------------------------------------------------------------------------------------------
 
+#Figure out where configure directory is and where can use the XML/Lite module from
 my $ProgName;
 ($ProgName = $PROGRAM_NAME) =~ s!(.*)/!!; # name of program
 my $ProgDir = $1;                         # name of directory where program lives
@@ -43,20 +44,28 @@ else { $cfgdir = $cwd; }
 
 #-----------------------------------------------------------------------------------------------
 # Add $cfgdir to the list of paths that Perl searches for modules
-
-my @dirs = ( "$cfgdir", "../../../cime/utils/perl5lib" );
+my @dirs = ( $cfgdir, "$cfgdir/perl5lib",
+             "$cfgdir/../../../../scripts/ccsm_utils/Tools/perl5lib",
+             "$cfgdir/../../../../models/utils/perl5lib",
+           );
 unshift @INC, @dirs;
-
+my $result = eval "require XML::Lite";
+if ( ! defined($result) ) {
+   die <<"EOF";
+** Cannot find perl module \"XML/Lite.pm\" from directories: @dirs **
+EOF
+}
 require queryDefaultXML;
 
 # Defaults
-my $cesmroot    = abs_path( "$cfgdir/../../../");
-
+my $datmblddir  = "$cfgdir/../../../../models/atm/datm/bld";
+my $drvblddir   = "$cfgdir/../../../../models/drv/bld";
 # The namelist defaults file contains default values for all required namelist variables.
 my @nl_defaults_files = ( "$cfgdir/namelist_files/namelist_defaults_overall.xml",
-                          "$cfgdir/namelist_files/namelist_defaults_drv.xml",
-                         );
-my $list = "clm.input_data_list";
+                          "$cfgdir/namelist_files/namelist_defaults_clm.xml",
+                          "$drvblddir/namelist_files/namelist_defaults_drv.xml",
+                          "$datmblddir/namelist_files/namelist_defaults_datm.xml" );
+my $list = "ctsm.input_data_list";
 my %list_of_all_files;
 
 sub usage {
@@ -69,8 +78,8 @@ OPTIONS
      -res  "resolution1,resolution2,..."  List of resolution to use for files.
                                           (At least one resolution is required)
                                           (If res is "all" will run over all resolutions)
-     -usrdat "name"                       Allow resolution to be the given clm user-data name
-     -silent [or -s]                      Do not do any extra printing.
+     -usrdat "name"                       Allow resolution to be the given ctsm user-data name
+     -silent [or -s]                      Don't do any extra printing.
 EXAMPLES
 
   List all the files needed for resolution 10x15 to the file $list.
@@ -82,9 +91,9 @@ EXAMPLES
 
   $ProgName -res 10x15,4x5,64x128 -s
 
-  to then read the resulting clm.input_data_list file and retreive the files
+  to then read the resulting ctsm.input_data_list file and retreive the files
 
-  ../../cime/scripts/Tools/check_input_data -datalistdir . -export
+  ../../../../scripts/ccsm_utils/Tools/check_input_data -datalistdir . -export
 
 EOF
 }
@@ -98,7 +107,7 @@ sub GetListofNeededFiles {
   my $inputopts_ref = shift;
   my $settings_ref  = shift;
   my $files_ref     = shift;
-
+  
   my $defaults_ref = &queryDefaultXML::ReadDefaultXMLFile( $inputopts_ref, $settings_ref );
   my @keys     = keys(%$defaults_ref);
   my $csmdata  = $$inputopts_ref{'csmdata'};
@@ -111,7 +120,7 @@ sub GetListofNeededFiles {
         $value    =~ m#$csmdata/(.+?)/([^/]+)$#;
         my $dir   = $1;
         my $file  = $2;
-
+        
         # If file is already in the list then do NOT do anything
         if ( defined($list_of_all_files{"$dir/$file"} ) ) {
         # Test that this file exists
@@ -146,7 +155,7 @@ sub GetListofNeededFiles {
 
 #-----------------------------------------------------------------------------------------------
 
-  my %opts = (
+  my %opts = ( 
                res        => undef,
                silent     => undef,
                csmdata    => "default",
@@ -187,11 +196,13 @@ sub GetListofNeededFiles {
      }
   }
   my %inputopts;
+  my $datmblddir             = "$cfgdir/../../../../models/atm/datm/bld";
   my @nl_definition_files    = (
-                                 "$cfgdir/namelist_files/namelist_definition_ctsm.xml"
+                                 "$datmblddir/namelist_files/namelist_definition_datm.xml",
+                                 "$cfgdir/namelist_files/namelist_definition.xml"
                                );
   $inputopts{'nldef_files'}    = \@nl_definition_files;
-  $inputopts{'empty_cfg_file'} = "$cfgdir/config_files/config_definition_ctsm.xml";
+  $inputopts{'empty_cfg_file'} = "$cfgdir/config_files/config_definition.xml";
 
   my $definition = Build::NamelistDefinition->new( $nl_definition_files[0] );
   foreach my $nl_defin_file ( @nl_definition_files ) {
@@ -208,7 +219,6 @@ sub GetListofNeededFiles {
   }
 
   # Input options
-  push @nl_defaults_files, "$cfgdir/namelist_files/namelist_defaults_ctsm.xml";
   if ( defined($opts{'usrdat'}) ) {
       push @nl_defaults_files, "$cfgdir/namelist_files/namelist_defaults_usr_files.xml";
   }
@@ -234,7 +244,7 @@ sub GetListofNeededFiles {
      print "Resolution = $res\n" if $printing;
      my %settings;
      if ( $res eq $opts{'usrdat'} ) {
-        $settings{'clm_usr_name'} = $opts{'usrdat'};
+        $settings{'ctsm_usr_name'} = $opts{'usrdat'};
         $settings{'csmdata'}      = $opts{'csmdata'};
         $settings{'notest'}       = 1;
      }
@@ -249,14 +259,17 @@ sub GetListofNeededFiles {
         #
         $settings{'sim_year_range'} = "constant";
         my @rcps = $definition->get_valid_values( "rcp", 'noquotes'=>1 );
-        $settings{'rcp'} = $rcps[0];
+        $settings{'rcp'} = $rcps[0];   
 YEAR:   foreach my $sim_year ( $definition->get_valid_values( "sim_year", 'noquotes'=>1 ) ) {
            print "sim_year = $sim_year\n" if $printing;
-           $settings{'sim_year'} = $sim_year;
+           $settings{'sim_year'} = $sim_year;   
            if ( $sim_year ne 1850 && $sim_year ne 2000 && $sim_year > 1800 ) { next YEAR; }
 
            my @bgcsettings   = $cfg->get_valid_values( "bgc" );
-           print "bgc=@bgcsettings\n" if $printing;
+           #my @glc_meclasses = $cfg->get_valid_values( "glc_nec" );
+           my @glc_meclasses = ( 0, 10 );
+           my @glc_grids     = $definition->get_valid_values( "glc_grid", 'noquotes'=>1 );
+           print "glc_nec = @glc_meclasses bgc=@bgcsettings glc_grids=@glc_grids\n" if $printing;
            #
            # Loop over all possible BGC settings
            #
@@ -268,21 +281,47 @@ YEAR:   foreach my $sim_year ( $definition->get_valid_values( "sim_year", 'noquo
               } else {
                  @crop_vals = ( "off" );
               }
-              $settings{'glc_nec'} = 10;
               #
-              # Loop over all possible crop settings
+              # Loop over all possible glc_nec settings
               #
-              foreach my $crop ( @crop_vals ) {
-                 $settings{'crop'} = $crop;
-                 if ( $crop eq "on" ) {
-                    $settings{'maxpft'} = 78;
-                 } else {
-                    $settings{'maxpft'} = 17;
-                 }
-                 $inputopts{'namelist'} = "clm_inparm";
-                 &GetListofNeededFiles( \%inputopts, \%settings, \%files );
-                 if ( $printTimes >= 1 ) {
-                    $inputopts{'printing'} = 0;
+              foreach my $glc_nec ( @glc_meclasses ) {
+                 $settings{'glc_nec'} = $glc_nec;
+                 #
+                 # Loop over all possible glc_grid settings
+                 #
+                 my @glcgrds;
+                 if ( $glc_nec == 0 ) { @glcgrds = ( "none" );
+                 } else               { @glcgrds = @glc_grids; } 
+                 foreach my $glc_grid ( @glcgrds ) {
+                    $settings{'glc_grid'} = $glc_grid;
+                    #
+                    # Loop over all possible crop settings
+                    #
+                    foreach my $crop ( @crop_vals ) {
+                       $settings{'crop'} = $crop;
+                       if ( $crop eq "on" ) {
+                          $settings{'maxpft'} = 21;
+                       } else {
+                          $settings{'maxpft'} = 17;
+                       }
+                       my @irrigset;
+                       if ( $glc_nec  == 0 && $sim_year == 2000 ) { 
+                          @irrigset= ( ".true.", ".false." );
+                       } else { 
+                          @irrigset= ( ".false." );
+                       }
+                       #
+                       # Loop over irrigation settings
+                       #
+                       foreach my $irrig ( @irrigset ) {
+                          $settings{'irrig'}     = $irrig;
+                          $inputopts{'namelist'} = "ctsm_inparm";
+                          &GetListofNeededFiles( \%inputopts, \%settings, \%files );
+                          if ( $printTimes >= 1 ) {
+                             $inputopts{'printing'} = 0;
+                          }
+                       }
+                    }
                  }
               }
            }
@@ -291,7 +330,9 @@ YEAR:   foreach my $sim_year ( $definition->get_valid_values( "sim_year", 'noquo
         # Now do sim-year ranges
         #
         $settings{'bgc'}       = "cn";
-        $inputopts{'namelist'} = "clm_inparm";
+        $settings{'irrig'}     = ".false.";
+        $settings{'glc_grid'}  = "none";
+        $inputopts{'namelist'} = "ctsm_inparm";
         foreach my $sim_year_range ( $definition->get_valid_values( "sim_year_range", 'noquotes'=>1 ) ) {
            $settings{'sim_year_range'} = $sim_year_range;
            if ( $sim_year_range =~ /([0-9]+)-([0-9]+)/ ) {
