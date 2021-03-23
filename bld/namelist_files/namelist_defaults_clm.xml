@@ -292,6 +292,8 @@ lnd/clm2/surfdata/surfdata_0230x0350_20110930.nc</fsurdat>
 lnd/clm2/surfdata/surfdata_wr50a_hist_78pfts_CMIP6_simyr2000_c200811.nc</fsurdat>
 <fsurdat hgrid="nna12a"     sim_year="2000" glc_nec="0"  irrig=".false." crop="off" >
 lnd/clm2/surfdata/surfdata_nna12a_hist_78pfts_CMIP6_simyr2000_c201106.nc</fsurdat>
+<fsurdat hgrid="nna04a"     sim_year="2000" glc_nec="0"  irrig=".false." crop="off" >
+lnd/clm2/surfdata/surfdata_nna04a_hist_78pfts_CMIP6_simyr2000_c210305.nc</fsurdat>
 
 <!-- for present day simulations - year 2000 -->
 <fsurdat hgrid="128x256"   sim_year="2000" irrig=".false." crop="off" >
