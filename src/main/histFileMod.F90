@@ -2863,7 +2863,6 @@ contains
                long_name='coordinate levels for soil decomposition variables', units='m', ncid=nfid(t))
 
           if(use_hillslope .and. .not.tape(t)%dov2xy)then
-
              call ncd_defvar(varname='hslp_distance', xtype=ncd_double, &
                   dim1name=namec, long_name='hillslope column distance', &
                   units='m', ncid=nfid(t))             
