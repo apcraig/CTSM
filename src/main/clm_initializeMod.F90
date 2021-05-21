@@ -53,13 +53,12 @@ contains
     use clm_varpar       , only: clm_varpar_init, natpft_lb, natpft_ub, cft_lb, cft_ub, maxpatch_glcmec, nlevsoi
     use clm_varcon       , only: clm_varcon_init
     use landunit_varcon  , only: landunit_varcon_init, max_lunit
-    use clm_varctl       , only: fsurdat, fatmlndfrc, noland, version  
-    use clm_varctl       , only: use_hillslope
+    use clm_varctl       , only: fsurdat, fatmlndfrc, version  
     use pftconMod        , only: pftcon       
     use decompInitMod    , only: decompInit_lnd, decompInit_clumps, decompInit_glcp, decompInit_lnd3D
     use decompInitMod    , only: decompInit_ocn
     use domainMod        , only: domain_check, ldomain, domain_init
-    use surfrdMod        , only: surfrd_get_globmask, surfrd_get_grid, surfrd_get_data, surfrd_get_num_patches
+    use surfrdMod        , only: surfrd_get_data, surfrd_get_num_patches
     use controlMod       , only: control_init, control_print, NLFilename
     use ncdio_pio        , only: ncd_pio_init
     use initGridCellsMod , only: initGridCells
@@ -161,6 +160,7 @@ contains
     use BalanceCheckMod               , only : BalanceCheckInit
     use NutrientCompetitionFactoryMod , only : create_nutrient_competition_method
     use FATESFireFactoryMod           , only : scalar_lightning
+    use clm_varctl       , only: use_hillslope
     !
     ! !ARGUMENTS
     integer, intent(in) :: ni, nj                ! global grid sizes
