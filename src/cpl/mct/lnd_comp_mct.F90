@@ -36,7 +36,7 @@ module lnd_comp_mct
 contains
 !====================================================================================
 
-  subroutine lnd_init_mct( EClock, cdata_l, x2l_l, l2x_l, NLFilename )
+  subroutine lnd_init_mct( EClock, cdata_l, x2l_l, l2x_l, cdata_s, x2s_s, s2x_s, NLFilename )
     !
     ! !DESCRIPTION:
     ! Initialize land surface model and obtain relevant atmospheric model arrays
@@ -75,6 +75,9 @@ contains
     type(ESMF_Clock),           intent(inout) :: EClock           ! Input synchronization clock
     type(seq_cdata),            intent(inout) :: cdata_l          ! Input land-model driver data
     type(mct_aVect),            intent(inout) :: x2l_l, l2x_l     ! land model import and export states
+    type(seq_cdata),            intent(inout) :: cdata_s          ! Input driver data for sno model
+    type(mct_aVect),            intent(inout) :: x2s_s            ! Import state to sno model
+    type(mct_aVect),            intent(inout) :: s2x_s            ! Export state from sno model
     character(len=*), optional, intent(in)    :: NLFilename       ! Namelist filename to read
     !
     ! !LOCAL VARIABLES:
@@ -268,7 +271,7 @@ contains
   end subroutine lnd_init_mct
 
   !====================================================================================
-  subroutine lnd_run_mct(EClock, cdata_l, x2l_l, l2x_l)
+  subroutine lnd_run_mct(EClock, cdata_l, x2l_l, l2x_l, cdata_s, x2s_s, s2x_s)
     !
     ! !DESCRIPTION:
     ! Run clm model
@@ -299,6 +302,9 @@ contains
     type(seq_cdata)  , intent(inout) :: cdata_l   ! Input driver data for land model
     type(mct_aVect)  , intent(inout) :: x2l_l     ! Import state to land model
     type(mct_aVect)  , intent(inout) :: l2x_l     ! Export state from land model
+    type(seq_cdata)  , intent(inout) :: cdata_s   ! Input driver data for sno model
+    type(mct_aVect)  , intent(inout) :: x2s_s     ! Import state to sno model
+    type(mct_aVect)  , intent(inout) :: s2x_s     ! Export state from sno model
     !
     ! !LOCAL VARIABLES:
     integer      :: ymd_sync             ! Sync date (YYYYMMDD)
@@ -499,7 +505,7 @@ contains
   end subroutine lnd_run_mct
 
   !====================================================================================
-  subroutine lnd_final_mct( EClock, cdata_l, x2l_l, l2x_l)
+  subroutine lnd_final_mct( EClock, cdata_l, x2l_l, l2x_l, cdata_s, x2s_s, s2x_s)
     !
     ! !DESCRIPTION:
     ! Finalize land surface model
@@ -514,6 +520,9 @@ contains
     type(seq_cdata)  , intent(inout) :: cdata_l   ! Input driver data for land model
     type(mct_aVect)  , intent(inout) :: x2l_l     ! Import state to land model
     type(mct_aVect)  , intent(inout) :: l2x_l     ! Export state from land model
+    type(seq_cdata)  , intent(inout) :: cdata_s          ! Input driver data for sno model
+    type(mct_aVect)  , intent(inout) :: x2s_s            ! Import state to sno model
+    type(mct_aVect)  , intent(inout) :: s2x_s            ! Export state from sno model
     !---------------------------------------------------------------------------
 
     ! fill this in
@@ -671,8 +680,8 @@ contains
 
     ! Check to see if restart was modified and we are resuming from data
     ! assimilation
-    call seq_cdata_setptrs(cdata_l, post_assimilation=resume_from_data_assim)
-    if ( resume_from_data_assim ) call update_DA_nstep()
+!tcx    call seq_cdata_setptrs(cdata_l, post_assimilation=resume_from_data_assim)
+!tcx    if ( resume_from_data_assim ) call update_DA_nstep()
 
   end subroutine lnd_handle_resume
 

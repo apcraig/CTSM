@@ -48,6 +48,7 @@ module lnd2atmType
      real(r8), pointer :: eflx_lwrad_out_grc (:)   => null() ! IR (longwave) radiation (W/m**2)
      real(r8), pointer :: fsa_grc            (:)   => null() ! solar rad absorbed (total) (W/m**2)
      real(r8), pointer :: z0m_grc            (:)   => null() ! roughness length, momentum (m)
+     real(r8), pointer :: logz0m_grc         (:)   => null() ! log of roughness length momentum (m)
      real(r8), pointer :: net_carbon_exchange_grc(:) => null() ! net CO2 flux (kg CO2/m**2/s) [+ to atm]
      real(r8), pointer :: nem_grc            (:)   => null() ! gridcell average net methane correction to CO2 flux (g C/m^2/s)
      real(r8), pointer :: ram1_grc           (:)   => null() ! aerodynamical resistance (s/m)
@@ -147,6 +148,7 @@ contains
     allocate(this%eflx_lh_tot_grc    (begg:endg))            ; this%eflx_lh_tot_grc    (:)   =ival
     allocate(this%fsa_grc            (begg:endg))            ; this%fsa_grc            (:)   =ival
     allocate(this%z0m_grc            (begg:endg))            ; this%z0m_grc            (:)   =ival
+    allocate(this%logz0m_grc         (begg:endg))            ; this%logz0m_grc         (:)   =ival
     allocate(this%net_carbon_exchange_grc(begg:endg))        ; this%net_carbon_exchange_grc(:) =ival
     allocate(this%nem_grc            (begg:endg))            ; this%nem_grc            (:)   =ival
     allocate(this%ram1_grc           (begg:endg))            ; this%ram1_grc           (:)   =ival
@@ -276,6 +278,14 @@ contains
          avgflag='A', &
          long_name='roughness length, momentum: gridcell average sent to coupler', &
          ptr_lnd=this%z0m_grc, &
+         default='inactive')
+
+    ! No need to set this to spval (or 0) because it is a gridcell-level field, so should
+    ! have valid values everywhere
+    call hist_addfld1d(fname='LOGZ0M_TO_COUPLER', units='m', &
+         avgflag='A', &
+         long_name='log roughness length, momentum: gridcell average sent to coupler', &
+         ptr_lnd=this%logz0m_grc, &
          default='inactive')
 
     if (use_lch4) then

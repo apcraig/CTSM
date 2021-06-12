@@ -32,7 +32,7 @@ module ncdio_pio
   use pio            , only : pio_noclobber, pio_noerr, pio_nofill, pio_nowrite, pio_offset_kind, pio_openfile
   use pio            , only : pio_put_att, pio_put_var, pio_read_darray, pio_real, pio_seterrorhandling
   use pio            , only : pio_setframe, pio_unlimited, pio_write, pio_write_darray, var_desc_t
-  use pio            , only : pio_iotask_rank, PIO_REARR_SUBSET, PIO_REARR_BOX
+  use pio            , only : pio_iotask_rank, PIO_REARR_SUBSET, PIO_REARR_BOX, PIO_64BIT_OFFSET
   use pio            , only : pio_inq_vartype, pio_real
   use array_utils    , only : convert_to_logical
   !
@@ -185,13 +185,14 @@ contains
     ! Initial PIO
     !
     ! !USES:
-    use shr_pio_mod     , only : shr_pio_getiosys, shr_pio_getiotype, shr_pio_getioformat
+    use shr_pio_mod     , only : shr_pio_getiosys, shr_pio_getiotype ! tcx , shr_pio_getioformat
     use clm_varctl      , only : inst_name
     !-----------------------------------------------------------------------
 
     PIO_subsystem => shr_pio_getiosys(inst_name)
     io_type       =  shr_pio_getiotype(inst_name)
-    io_netcdf_format = shr_pio_getioformat(inst_name)
+!tcx    io_netcdf_format = shr_pio_getioformat(inst_name)
+    io_netcdf_format = PIO_64BIT_OFFSET
   end subroutine ncd_pio_init
 
   !-----------------------------------------------------------------------

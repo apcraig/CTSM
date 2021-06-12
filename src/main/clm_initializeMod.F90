@@ -28,7 +28,7 @@ module clm_initializeMod
   use filterMod             , only : allocFilters, filter, filter_inactive_and_active
   use CLMFatesInterfaceMod  , only : CLMFatesGlobals
   use dynSubgridControlMod  , only : dynSubgridControl_init, get_reset_dynbal_baselines
-  use SelfTestDriver        , only : self_test_driver
+!tcx  use SelfTestDriver        , only : self_test_driver
   use SoilMoistureStreamMod , only : PrescribedSoilMoistureInit
   use clm_instMod
   !
@@ -286,7 +286,7 @@ contains
     end if
 
     ! Run any requested self-tests
-    call self_test_driver(bounds_proc)
+!tcx    call self_test_driver(bounds_proc)
 
     ! Deallocate surface grid dynamic memory for variables that aren't needed elsewhere.
     ! Some things are kept until the end of initialize2; urban_valid is kept through the

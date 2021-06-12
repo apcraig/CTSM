@@ -53,6 +53,8 @@ contains
     real(r8) :: co2_ppmv_diag        ! temporary
     real(r8) :: co2_ppmv_prog        ! temporary
     real(r8) :: co2_ppmv_val         ! temporary
+    real(r8) :: prec_limit           ! check for tiny negative values of precip
+    real(r8) :: sola_limit           ! check for tiny negative values of solar
     integer  :: co2_type_idx         ! integer flag for co2_type options
     character(len=32) :: fname       ! name of field that is NaN
     character(len=32), parameter :: sub = 'lnd_import'
@@ -89,8 +91,10 @@ contains
 
        wateratm2lndbulk_inst%forc_flood_grc(g)   = -x2l(index_x2l_Flrr_flood,i)  
 
-       wateratm2lndbulk_inst%volr_grc(g)   = x2l(index_x2l_Flrr_volr,i) * (ldomain%area(g) * 1.e6_r8)
-       wateratm2lndbulk_inst%volrmch_grc(g)= x2l(index_x2l_Flrr_volrmch,i) * (ldomain%area(g) * 1.e6_r8)
+!tcx       wateratm2lndbulk_inst%volr_grc(g)   = x2l(index_x2l_Flrr_volr,i) * (ldomain%area(g) * 1.e6_r8)
+!tcx       wateratm2lndbulk_inst%volrmch_grc(g)= x2l(index_x2l_Flrr_volrmch,i) * (ldomain%area(g) * 1.e6_r8)
+       wateratm2lndbulk_inst%volr_grc(g)   = 0._r8
+       wateratm2lndbulk_inst%volrmch_grc(g)= 0._r8
        wateratm2lndbulk_inst%tdepth_grc(g)    = x2l(index_x2l_Sr_tdepth,i)
        wateratm2lndbulk_inst%tdepthmax_grc(g) = x2l(index_x2l_Sr_tdepth_max,i)
 
@@ -105,6 +109,15 @@ contains
        atm2lnd_inst%forc_solai_grc(g,2)              = x2l(index_x2l_Faxa_swndf,i)   ! forc_solldxy Atm flux  W/m^2
        atm2lnd_inst%forc_solai_grc(g,1)              = x2l(index_x2l_Faxa_swvdf,i)   ! forc_solsdxy Atm flux  W/m^2
 
+       ! tcx, check for tiny negative downward solar values and reset.
+       ! only set to zero if they are very small negative values, otherwise let the code fail
+       ! typical max values of solar forcing are 500, set sola_limit to several orders of magnitude smaller
+       sola_limit = -1.0e-16
+       if (atm2lnd_inst%forc_solad_grc(g,1) < 0._r8 .and. atm2lnd_inst%forc_solad_grc(g,1) > sola_limit) atm2lnd_inst%forc_solad_grc(g,1) = 0._r8
+       if (atm2lnd_inst%forc_solad_grc(g,2) < 0._r8 .and. atm2lnd_inst%forc_solad_grc(g,2) > sola_limit) atm2lnd_inst%forc_solad_grc(g,2) = 0._r8
+       if (atm2lnd_inst%forc_solai_grc(g,1) < 0._r8 .and. atm2lnd_inst%forc_solai_grc(g,1) > sola_limit) atm2lnd_inst%forc_solai_grc(g,1) = 0._r8
+       if (atm2lnd_inst%forc_solai_grc(g,2) < 0._r8 .and. atm2lnd_inst%forc_solai_grc(g,2) > sola_limit) atm2lnd_inst%forc_solai_grc(g,2) = 0._r8
+
        atm2lnd_inst%forc_th_not_downscaled_grc(g)    = x2l(index_x2l_Sa_ptem,i)      ! forc_thxy Atm state K
        wateratm2lndbulk_inst%forc_q_not_downscaled_grc(g)     = x2l(index_x2l_Sa_shum,i)      ! forc_qxy  Atm state kg/kg
        atm2lnd_inst%forc_pbot_not_downscaled_grc(g)  = x2l(index_x2l_Sa_pbot,i)      ! ptcmxy  Atm state Pa
@@ -115,6 +128,15 @@ contains
        forc_rainl(g)                                 = x2l(index_x2l_Faxa_rainl,i)   ! mm/s
        forc_snowc(g)                                 = x2l(index_x2l_Faxa_snowc,i)   ! mm/s
        forc_snowl(g)                                 = x2l(index_x2l_Faxa_snowl,i)   ! mm/s
+
+       ! tcx, check for negative values as this causing problems in CTSM soil
+       ! only set to zero if they are very small negative values, otherwise let the code fail
+       ! typical max values of precip are 1.0e-4, set prec_limit to several orders of magnitude smaller
+       prec_limit = -1.0e-16
+       if (forc_rainc(g) < 0._r8 .and. forc_rainc(g) > prec_limit) forc_rainc(g) = 0._r8
+       if (forc_rainl(g) < 0._r8 .and. forc_rainl(g) > prec_limit) forc_rainl(g) = 0._r8
+       if (forc_snowc(g) < 0._r8 .and. forc_snowc(g) > prec_limit) forc_snowc(g) = 0._r8
+       if (forc_snowl(g) < 0._r8 .and. forc_snowl(g) > prec_limit) forc_snowl(g) = 0._r8
 
        ! atmosphere coupling, for prognostic/prescribed aerosols
        atm2lnd_inst%forc_aer_grc(g,1)                = x2l(index_x2l_Faxa_bcphidry,i)
@@ -200,19 +222,19 @@ contains
 
     end do
 
-    call glc2lnd_inst%set_glc2lnd_fields_mct( &
-         bounds = bounds, &
-         glc_present = glc_present, &
-         ! NOTE(wjs, 2017-12-13) the x2l argument doesn't have the typical bounds
-         ! subsetting (bounds%begg:bounds%endg). This mirrors the lack of these bounds in
-         ! the call to lnd_import from lnd_run_mct. This is okay as long as this code is
-         ! outside a clump loop.
-         x2l = x2l, &
-         index_x2l_Sg_ice_covered = index_x2l_Sg_ice_covered, &
-         index_x2l_Sg_topo = index_x2l_Sg_topo, &
-         index_x2l_Flgg_hflx = index_x2l_Flgg_hflx, &
-         index_x2l_Sg_icemask = index_x2l_Sg_icemask, &
-         index_x2l_Sg_icemask_coupled_fluxes = index_x2l_Sg_icemask_coupled_fluxes)
+!tcx    call glc2lnd_inst%set_glc2lnd_fields_mct( &
+!         bounds = bounds, &
+!         glc_present = glc_present, &
+!         ! NOTE(wjs, 2017-12-13) the x2l argument doesn't have the typical bounds
+!         ! subsetting (bounds%begg:bounds%endg). This mirrors the lack of these bounds in
+!         ! the call to lnd_import from lnd_run_mct. This is okay as long as this code is
+!         ! outside a clump loop.
+!         x2l = x2l, &
+!         index_x2l_Sg_ice_covered = index_x2l_Sg_ice_covered, &
+!         index_x2l_Sg_topo = index_x2l_Sg_topo, &
+!         index_x2l_Flgg_hflx = index_x2l_Flgg_hflx, &
+!         index_x2l_Sg_icemask = index_x2l_Sg_icemask, &
+!tcx         index_x2l_Sg_icemask_coupled_fluxes = index_x2l_Sg_icemask_coupled_fluxes)
 
   end subroutine lnd_import
 
@@ -284,6 +306,7 @@ contains
        ! Additional fields for DUST, PROGSSLT, dry-deposition and VOC
        ! These are now standard fields, but the check on the index makes sure the driver handles them
        if (index_l2x_Sl_ram1      /= 0 )  l2x(index_l2x_Sl_ram1,i)     =  lnd2atm_inst%ram1_grc(g)
+       if (index_l2x_Sl_logz0     /= 0 )  l2x(index_l2x_Sl_logz0,i)    =  lnd2atm_inst%logz0m_grc(g)
        if (index_l2x_Sl_fv        /= 0 )  l2x(index_l2x_Sl_fv,i)       =  lnd2atm_inst%fv_grc(g)
        if (index_l2x_Sl_soilw     /= 0 )  l2x(index_l2x_Sl_soilw,i)    =  waterlnd2atmbulk_inst%h2osoi_vol_grc(g,1)
        if (index_l2x_Fall_flxdst1 /= 0 )  l2x(index_l2x_Fall_flxdst1,i)= -lnd2atm_inst%flxdst_grc(g,1)
@@ -319,31 +342,36 @@ contains
        ! sign convention is positive downward with 
        ! hierarchy of atm/glc/lnd/rof/ice/ocn.  
        ! I.e. water sent from land to rof is positive
+!tcx for cesm1
+       l2x(index_l2x_Flrl_rofsur,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsur_grc(g) + &
+                                      waterlnd2atmbulk_inst%qflx_rofliq_qgwl_grc(g) + &
+                                      waterlnd2atmbulk_inst%qflx_rofliq_qsub_grc(g) + &
+                                      waterlnd2atmbulk_inst%qflx_rofliq_drain_perched_grc(g)
 
-       l2x(index_l2x_Flrl_rofsur,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsur_grc(g)
+!tcx       l2x(index_l2x_Flrl_rofsur,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsur_grc(g)
 
        !  subsurface runoff is the sum of qflx_drain and qflx_perched_drain
-       l2x(index_l2x_Flrl_rofsub,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsub_grc(g) &
-            + waterlnd2atmbulk_inst%qflx_rofliq_drain_perched_grc(g)
+!tcx       l2x(index_l2x_Flrl_rofsub,i) = waterlnd2atmbulk_inst%qflx_rofliq_qsub_grc(g) &
+!            + waterlnd2atmbulk_inst%qflx_rofliq_drain_perched_grc(g)
 
        !  qgwl sent individually to coupler
-       l2x(index_l2x_Flrl_rofgwl,i) = waterlnd2atmbulk_inst%qflx_rofliq_qgwl_grc(g)
+!tcx       l2x(index_l2x_Flrl_rofgwl,i) = waterlnd2atmbulk_inst%qflx_rofliq_qgwl_grc(g)
 
        ! ice  sent individually to coupler
        l2x(index_l2x_Flrl_rofi,i) = waterlnd2atmbulk_inst%qflx_rofice_grc(g)
 
        ! irrigation flux to be removed from main channel storage (negative)
-       l2x(index_l2x_Flrl_irrig,i) = - waterlnd2atmbulk_inst%qirrig_grc(g)
+!tcx       l2x(index_l2x_Flrl_irrig,i) = - waterlnd2atmbulk_inst%qirrig_grc(g)
 
        ! glc coupling
        ! We could avoid setting these fields if glc_present is .false., if that would
        ! help with performance. (The downside would be that we wouldn't have these fields
        ! available for diagnostic purposes or to force a later T compset with dlnd.)
-       do num = 0,glc_nec
-          l2x(index_l2x_Sl_tsrf(num),i)   = lnd2glc_inst%tsrf_grc(g,num)
-          l2x(index_l2x_Sl_topo(num),i)   = lnd2glc_inst%topo_grc(g,num)
-          l2x(index_l2x_Flgl_qice(num),i) = lnd2glc_inst%qice_grc(g,num)
-       end do
+!tcx       do num = 0,glc_nec
+!          l2x(index_l2x_Sl_tsrf(num),i)   = lnd2glc_inst%tsrf_grc(g,num)
+!          l2x(index_l2x_Sl_topo(num),i)   = lnd2glc_inst%topo_grc(g,num)
+!          l2x(index_l2x_Flgl_qice(num),i) = lnd2glc_inst%qice_grc(g,num)
+!       end do
 
        !--------------------------
        ! Check for nans to coupler
